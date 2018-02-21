@@ -26,7 +26,12 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.get("/", (req, res) => {
-  res.send(database.users);
+  db
+    .select("*")
+    .from("users")
+    .then(data => {
+      res.send(data);
+    });
 });
 
 app.post("/signin", (req, res) => {
