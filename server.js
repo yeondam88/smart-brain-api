@@ -5,7 +5,19 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt-nodejs");
 const knex = require("knex");
 
-const postgres = knex({
+const database = {
+  users: [
+    {
+      id: "123",
+      name: "Andrei",
+      email: "john@gmail.com",
+      entries: 0,
+      joined: new Date()
+    }
+  ]
+};
+
+const db = knex({
   client: "pg",
   connection: {
     host: "127.0.0.1",
@@ -15,7 +27,12 @@ const postgres = knex({
   }
 });
 
-console.log(postgres.select("*").from("users"));
+db
+  .select("*")
+  .from("users")
+  .then(data => {
+    console.log(data);
+  });
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -36,24 +53,19 @@ app.post("/signin", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  let password;
+  const { email, name, password } = req.body;
 
-  bcrypt.hash(req.body.password, null, null, (err, hash) => {
-    password = hash;
-  });
-
-  database.users.push({
-    id: "126",
-    name: req.body.name,
-    email: req.body.email,
-    password: password,
-    entries: 0,
-    joined: new Date()
-  });
-
-  res.send(database.users[database.users.length - 1]);
-
-  console.log("new Database: ", database);
+  db("users")
+    .returning("*")
+    .insert({
+      email: email,
+      name: name,
+      joined: new Date()
+    })
+    .then(user => {
+      res.json(user[0]);
+    })
+    .catch(err => res.status(400).json("unable to register"));
 });
 
 app.get("/profile/:id", (req, res) => {
